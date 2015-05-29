@@ -1,0 +1,15 @@
+[submodule "jasmin"]
+	path = jasmin
+	url = https://github.com/Sable/jasmin.git
+[submodule "heros"]
+	path = heros
+	url = https://github.com/Sable/heros.git
+[submodule "soot"]
+	path = soot
+	url = https://github.com/Sable/soot.git
+[submodule "soot-infoflow"]
+	path = soot-infoflow
+	url = https://github.com/secure-software-engineering/soot-infoflow.git
+[submodule "soot-infoflow-android"]
+	path = soot-infoflow-android
+	url = https://github.com/secure-software-engineering/soot-infoflow-android.git
