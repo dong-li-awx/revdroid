@@ -182,8 +182,9 @@ public class Application {
 
 	private void calculateDummyMainMethod() {
 		soot.G.reset();
+		initSoot();
 		this.entryPointCreator = createEntryPointCreator();
-//		this.dummyMainMethod = this.entryPointCreator.createDummyMain();
+		this.dummyMainMethod = this.entryPointCreator.createDummyMain();
 	}
 
 	/**

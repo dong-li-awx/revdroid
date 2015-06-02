@@ -40,9 +40,9 @@ public class Analyzer {
 		PackManager.v().getPack("wjpp").apply();
 		PackManager.v().getPack("cg").apply();
 
-		 eliminateDeadCode();
+		eliminateDeadCode();
 		 
-		 checkMethods();
+		checkMethods();
 	}
 
 	private void initSoot() {
