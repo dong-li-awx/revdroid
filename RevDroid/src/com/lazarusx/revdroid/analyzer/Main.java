@@ -1,8 +1,13 @@
 package com.lazarusx.revdroid.analyzer;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintStream;
 
 import org.xmlpull.v1.XmlPullParserException;
+
+import soot.G;
 
 public class Main {
 	final static String ANDROID_PLATFORM_PATH = "/home/ray/android-sdk/platforms";
@@ -10,7 +15,7 @@ public class Main {
 	
 	final static boolean DEBUG = false;
 
-	public static void main(String[] args) {
+	public static void main(String[] args) {		
 		String apkPath = args[0];
 		Application app = null;
 		try {
@@ -29,5 +34,15 @@ public class Main {
 			analyzer.analyze();
 		}
 	}
-
+	
+	
+	public static void setOutput() {
+		if (!DEBUG) {
+			try {
+				G.v().out = new PrintStream(new File("/home/ray/revdroiddebugg.txt"));
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} 
+		}
+	}
 }

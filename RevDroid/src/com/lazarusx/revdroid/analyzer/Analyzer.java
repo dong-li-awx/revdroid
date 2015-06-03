@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
+import soot.G;
 import soot.MethodOrMethodContext;
 import soot.PackManager;
 import soot.Scene;
@@ -40,59 +41,69 @@ public class Analyzer {
 		PackManager.v().getPack("wjpp").apply();
 		PackManager.v().getPack("cg").apply();
 
-		eliminateDeadCode();
+//		eliminateDeadCode();
 		 
 		checkMethods();
 	}
 
 	private void initSoot() {
-		soot.G.reset();
-
+		G.reset();
+		
+		Main.setOutput();
+		
 		Options.v().set_no_bodies_for_excluded(true);
 		Options.v().set_allow_phantom_refs(true);
-		// TODO: change this when necessary
 		Options.v().set_output_format(Options.output_format_none);
-		Options.v().set_soot_classpath(
-				appendClasspath(this.app.getApkPath(),
-						this.app.getAndroidJarPath()));
-		Options.v().setPhaseOption("cg.spark", "on");
-		Options.v().setPhaseOption("cg.spark", "string-constants:true");
 		Options.v().set_whole_program(true);
-		Options.v().setPhaseOption("cg", "trim-clinit:false");
-		Options.v().setPhaseOption("jb.ulp", "off");
-		Options.v().set_src_prec(Options.src_prec_apk);
+		Options.v().set_process_dir(Collections.singletonList(this.app.getApkPath()));
+//		Options.v().set_soot_classpath(
+//				appendClasspath(this.app.getApkPath(),
+//						this.app.getAndroidJarPath()));
+		Options.v().set_soot_classpath(this.app.getAndroidJarPath());
 		Options.v().set_android_jars(this.app.getAndroidPlatformPath());
+		Options.v().set_src_prec(Options.src_prec_apk);
+		soot.Main.v().autoSetOptions();
 
-		Collection<String> classes = this.app.getEntryPointCreator()
-				.getRequiredClasses();
-		for (String className : classes) {
-			Scene.v().addBasicClass(className, SootClass.BODIES);
-		}
+		Options.v().setPhaseOption("cg.spark", "on");
+//		Options.v().setPhaseOption("cg.spark", "string-constants:true");
+//		Options.v().setPhaseOption("cg", "trim-clinit:false");
+//		Options.v().setPhaseOption("jb.ulp", "off");
+		
+//		Collection<String> classes = this.app.getEntryPointCreator()
+//				.getRequiredClasses();
+//		for (String className : classes) {
+//			Scene.v().addBasicClass(className, SootClass.BODIES);
+//		}
 		Scene.v().loadNecessaryClasses();
-
-		boolean hasClasses = false;
-		for (String className : classes) {
-			SootClass sootClass = Scene.v().forceResolve(className,
-					SootClass.BODIES);
-			if (sootClass != null) {
-				sootClass.setApplicationClass();
-				if (!sootClass.isPhantomClass() && !sootClass.isPhantom()) {
-					hasClasses = true;
-				}
-			}
-		}
-
-		if (!hasClasses) {
-			System.err
-					.println("Only phantom classes loaded, skipping analysis...");
-			return;
-		}
 		
-		Scene.v().setEntryPoints(
-				Collections.singletonList(this.app.getDummyMainMethod()));
-		
-		LibraryClassPatcher patcher = new LibraryClassPatcher();
-		patcher.patchLibraries();
+		Scene.v().setEntryPoints(Collections.singletonList(this.app.getDummyMainMethod()));
+//		if (Scene.v().containsClass(this.app.getDummyMainMethod().getDeclaringClass().getName()))
+			Scene.v().removeClass(this.app.getDummyMainMethod().getDeclaringClass());
+		Scene.v().addClass(this.app.getDummyMainMethod().getDeclaringClass());
+
+//		boolean hasClasses = false;
+//		for (String className : classes) {
+//			SootClass sootClass = Scene.v().forceResolve(className,
+//					SootClass.BODIES);
+//			if (sootClass != null) {
+//				sootClass.setApplicationClass();
+//				if (!sootClass.isPhantomClass() && !sootClass.isPhantom()) {
+//					hasClasses = true;
+//				}
+//			}
+//		}
+//
+//		if (!hasClasses) {
+//			System.err
+//					.println("Only phantom classes loaded, skipping analysis...");
+//			return;
+//		}
+//		
+//		Scene.v().setEntryPoints(
+//				Collections.singletonList(this.app.getDummyMainMethod()));
+//		
+//		LibraryClassPatcher patcher = new LibraryClassPatcher();
+//		patcher.patchLibraries();
 	}
 
 	private String appendClasspath(String appPath, String libPath) {

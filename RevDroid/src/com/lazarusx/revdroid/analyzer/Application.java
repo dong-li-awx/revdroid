@@ -12,7 +12,7 @@ import java.util.Map.Entry;
 
 import org.xmlpull.v1.XmlPullParserException;
 
-import soot.Main;
+import soot.G;
 import soot.PackManager;
 import soot.Scene;
 import soot.SootClass;
@@ -181,7 +181,6 @@ public class Application {
 	}
 
 	private void calculateDummyMainMethod() {
-		soot.G.reset();
 		initSoot();
 		this.entryPointCreator = createEntryPointCreator();
 		this.dummyMainMethod = this.entryPointCreator.createDummyMain();
@@ -207,7 +206,6 @@ public class Application {
 			hasChanged = false;
 
 			// Create the new iteration of the main method
-			soot.G.reset();
 			initSoot();
 			createMainMethodAndAddToSoot();
 
@@ -312,6 +310,10 @@ public class Application {
 	 * callback calculation
 	 */
 	private void initSoot() {
+		G.reset();
+		
+		Main.setOutput();
+		
 		Options.v().set_no_bodies_for_excluded(true);
 		Options.v().set_allow_phantom_refs(true);
 		Options.v().set_output_format(Options.output_format_none);
@@ -320,7 +322,7 @@ public class Application {
 		Options.v().set_soot_classpath(this.androidJarPath);
 		Options.v().set_android_jars(this.androidPlatformPath);
 		Options.v().set_src_prec(Options.src_prec_apk);
-		Main.v().autoSetOptions();
+		soot.Main.v().autoSetOptions();
 
 		// Configure the callgraph algorithm
 		switch (callgraphAlgorithm) {
