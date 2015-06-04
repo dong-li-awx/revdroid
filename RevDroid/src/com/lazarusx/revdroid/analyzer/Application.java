@@ -70,7 +70,7 @@ public class Application {
 		calculateResourcePackagesAndCallbackMethods();
 		
 		// Calculate the entry point creator and dummy main method 
-		calculateDummyMainMethod();
+		calculateEntryPointCreator();
 	}
 	
 	public String getApkPath() {
@@ -180,10 +180,9 @@ public class Application {
 		calculateCallbackMethods(resParser, lfp);
 	}
 
-	private void calculateDummyMainMethod() {
+	private void calculateEntryPointCreator() {
 		initSoot();
 		this.entryPointCreator = createEntryPointCreator();
-		this.dummyMainMethod = this.entryPointCreator.createDummyMain();
 	}
 
 	/**

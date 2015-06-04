@@ -39,7 +39,7 @@ public class Main {
 	public static void setOutput() {
 		if (!DEBUG) {
 			try {
-				G.v().out = new PrintStream(new File("/home/ray/revdroiddebugg.txt"));
+				G.v().out = new PrintStream(new File("/dev/null"));
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			} 

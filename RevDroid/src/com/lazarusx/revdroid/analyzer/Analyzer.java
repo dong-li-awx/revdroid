@@ -29,7 +29,7 @@ import soot.util.queue.QueueReader;
 
 public class Analyzer {
 	Application app;
-
+	
 	public Analyzer(Application app) {
 		this.app = app;
 	}
@@ -41,7 +41,7 @@ public class Analyzer {
 		PackManager.v().getPack("wjpp").apply();
 		PackManager.v().getPack("cg").apply();
 
-//		eliminateDeadCode();
+		eliminateDeadCode();
 		 
 		checkMethods();
 	}
@@ -76,10 +76,12 @@ public class Analyzer {
 //		}
 		Scene.v().loadNecessaryClasses();
 		
-		Scene.v().setEntryPoints(Collections.singletonList(this.app.getDummyMainMethod()));
+		SootMethod dummyMainMethod = this.app.getEntryPointCreator().createDummyMain();
+		Options.v().set_main_class(dummyMainMethod.getSignature());
+		Scene.v().setEntryPoints(Collections.singletonList(dummyMainMethod));
 //		if (Scene.v().containsClass(this.app.getDummyMainMethod().getDeclaringClass().getName()))
-			Scene.v().removeClass(this.app.getDummyMainMethod().getDeclaringClass());
-		Scene.v().addClass(this.app.getDummyMainMethod().getDeclaringClass());
+//			Scene.v().removeClass(this.app.getDummyMainMethod().getDeclaringClass());
+//		Scene.v().addClass(this.app.getDummyMainMethod().getDeclaringClass());
 
 //		boolean hasClasses = false;
 //		for (String className : classes) {
@@ -170,7 +172,7 @@ public class Analyzer {
 			if (SystemClassHandler.isClassInSystemPackage(sm.method()
 					.getDeclaringClass().getName()))
 				continue;
-			
+		
 			ConditionalBranchFolder.v().transform(sm.method().getActiveBody());
 			
 			// Delete all dead code. We need to be careful and patch the cfg so
