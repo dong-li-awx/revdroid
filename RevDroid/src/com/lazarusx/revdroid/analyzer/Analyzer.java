@@ -29,7 +29,7 @@ import soot.util.queue.QueueReader;
 
 public class Analyzer {
 	Application app;
-	
+
 	public Analyzer(Application app) {
 		this.app = app;
 	}
@@ -42,6 +42,8 @@ public class Analyzer {
 		PackManager.v().getPack("cg").apply();
 
 		eliminateDeadCode();
+		
+		patchLibraries();
 		 
 		checkMethods();
 	}
@@ -104,8 +106,6 @@ public class Analyzer {
 //		Scene.v().setEntryPoints(
 //				Collections.singletonList(this.app.getDummyMainMethod()));
 //		
-//		LibraryClassPatcher patcher = new LibraryClassPatcher();
-//		patcher.patchLibraries();
 	}
 
 	private String appendClasspath(String appPath, String libPath) {
@@ -202,6 +202,11 @@ public class Analyzer {
 				callSites.add(u);
 			}
 		return callSites;
+	}
+	
+	private void patchLibraries() {
+		LibraryClassPatcher patcher = new LibraryClassPatcher();
+		patcher.patchLibraries();
 	}
 	
 	private void checkMethods() {
