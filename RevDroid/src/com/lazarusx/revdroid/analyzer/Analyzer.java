@@ -11,8 +11,8 @@ import soot.G;
 import soot.MethodOrMethodContext;
 import soot.PackManager;
 import soot.Scene;
-import soot.SootClass;
 import soot.SootMethod;
+import soot.TrapManager;
 import soot.Unit;
 import soot.jimple.InvokeExpr;
 import soot.jimple.Stmt;
@@ -219,8 +219,15 @@ public class Analyzer {
 						Stmt stmt = (Stmt) u;
 						if (stmt.containsInvokeExpr()) {
 							InvokeExpr inv = stmt.getInvokeExpr();
-							if (app.getMethodsConcerned().contains(inv.getMethod().getName())) {
-								System.out.println(inv.getMethod().getName() + " in " + sm.getName());
+							AndroidMethod method = new AndroidMethod(inv.getMethod());
+							if (app.getMethodsConcerned().contains(method)) {
+								System.out.println("Occurrence found " + method.getSignature() + " " + sm.getName());
+								
+								// Super classes of `SecurityException` are included into analysis by Soot.
+								// See the source code of `TrapManager.isExceptionCaughtAt()`.
+								if (TrapManager.isExceptionCaughtAt(Scene.v().getSootClass("java.lang.SecurityException"), stmt, sm.getActiveBody())) {
+									System.out.println("Found traps containing the method");
+								}
 							}
 						}
 					}
