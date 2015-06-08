@@ -11,7 +11,7 @@ import soot.G;
 
 public class Main {
 	final static String ANDROID_PLATFORM_PATH = "/home/ray/android-sdk/platforms";
-	final static String PSCOUT_RESULT_PATH = "/home/ray/pscout/results/jellybean_allmappings";
+	final static String PSCOUT_RESULT_PATH = "/home/ray/pscout/android_class/allmappings";
 	
 	final static boolean DEBUG = false;
 
