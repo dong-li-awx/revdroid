@@ -20,6 +20,7 @@ import soot.jimple.infoflow.cfg.LibraryClassPatcher;
 import soot.jimple.infoflow.solver.cfg.InfoflowCFG;
 import soot.jimple.infoflow.util.InterproceduralConstantValuePropagator;
 import soot.jimple.infoflow.util.SystemClassHandler;
+import soot.jimple.toolkits.callgraph.Edge;
 import soot.jimple.toolkits.scalar.ConditionalBranchFolder;
 import soot.jimple.toolkits.scalar.ConstantPropagatorAndFolder;
 import soot.jimple.toolkits.scalar.DeadAssignmentEliminator;
@@ -45,7 +46,7 @@ public class Analyzer {
 		
 		patchLibraries();
 		 
-		checkMethods();
+		findExceptionHandler();
 	}
 
 	private void initSoot() {
@@ -209,7 +210,7 @@ public class Analyzer {
 		patcher.patchLibraries();
 	}
 	
-	private void checkMethods() {
+	private void findExceptionHandler() {
 		Iterator<MethodOrMethodContext> iterator = Scene.v().getReachableMethods().listener();
 		while (iterator.hasNext()) {
 			SootMethod sm = iterator.next().method();
@@ -225,13 +226,51 @@ public class Analyzer {
 								
 								// Super classes of `SecurityException` are included into analysis by Soot.
 								// See the source code of `TrapManager.isExceptionCaughtAt()`.
-								if (TrapManager.isExceptionCaughtAt(Scene.v().getSootClass("java.lang.SecurityException"), stmt, sm.getActiveBody())) {
+								if (checkStatement(stmt, sm)) {
 									System.out.println("Found traps containing the method");
+								} else {
+									System.out.println("Not found traps containing the method");
 								}
 							}
 						}
 					}
 				}
+			}
+		}
+	}
+	
+	private boolean checkStatement(Stmt stmt, SootMethod sm) {
+		if (TrapManager.isExceptionCaughtAt(Scene.v().getSootClass("java.lang.SecurityException"), stmt, sm.getActiveBody())) {
+			return true;
+		} else {
+			Iterator<Edge> edges = Scene.v().getCallGraph().edgesOutOf(sm);
+			
+			if (!edges.hasNext()) {
+				return false;
+			} else {
+				while (edges.hasNext()) {
+					SootMethod caller = edges.next().getSrc().method();
+					if (caller.isConcrete()) {
+						for (Unit u : caller.retrieveActiveBody().getUnits()) {
+							if (u instanceof Stmt) {
+								Stmt stmtInCaller = (Stmt) u;
+								if (stmtInCaller.containsInvokeExpr()) {
+									InvokeExpr inv = stmtInCaller.getInvokeExpr();
+									AndroidMethod method = new AndroidMethod(inv.getMethod());
+									if (method.equals(sm)) {
+										if (!checkStatement(stmtInCaller, caller)) {
+											return false;
+										}
+									}
+								}
+							}
+						}
+					} else {
+						return false;
+					}
+				}
+				
+				return true;
 			}
 		}
 	}
