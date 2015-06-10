@@ -228,7 +228,8 @@ public class Analyzer {
 								
 								// Super classes of `SecurityException` are included into analysis by Soot.
 								// See the source code of `TrapManager.isExceptionCaughtAt()`.
-								if (checkStatement(stmt, sm)) {
+								HashSet<Stmt> history = new HashSet<Stmt>();
+								if (checkStatement(stmt, sm, history)) {
 									System.out.println("Found traps containing the method");
 								} else {
 									System.out.println("Not found traps containing the method");
@@ -241,7 +242,14 @@ public class Analyzer {
 		}
 	}
 	
-	private boolean checkStatement(Stmt stmt, SootMethod sm) {
+	private boolean checkStatement(Stmt stmt, SootMethod sm, HashSet<Stmt> history) {
+		if (history.contains(stmt)) {
+			System.out.println("Recursion found. Not found trap in caller");
+			return false;
+		} else {
+			history.add(stmt);
+		}
+		
 		if (TrapManager.isExceptionCaughtAt(Scene.v().getSootClass("java.lang.SecurityException"), stmt, sm.getActiveBody())) {
 			return true;
 		} else {
@@ -253,7 +261,7 @@ public class Analyzer {
 				for (Unit u : callers) {
 					if (u instanceof Stmt) {
 						Stmt callerStmt = (Stmt) u;
-						if (!checkStatement(callerStmt, callerStmt.getInvokeExpr().getMethod())) {
+						if (!checkStatement(callerStmt, callerStmt.getInvokeExpr().getMethod(), history)) {
 							System.out.println("Not found trap in caller");
 							return false;
 						}
