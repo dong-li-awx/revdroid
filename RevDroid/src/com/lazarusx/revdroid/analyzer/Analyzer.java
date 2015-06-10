@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -21,6 +22,7 @@ import soot.jimple.infoflow.solver.cfg.InfoflowCFG;
 import soot.jimple.infoflow.util.InterproceduralConstantValuePropagator;
 import soot.jimple.infoflow.util.SystemClassHandler;
 import soot.jimple.toolkits.callgraph.Edge;
+import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 import soot.jimple.toolkits.scalar.ConditionalBranchFolder;
 import soot.jimple.toolkits.scalar.ConstantPropagatorAndFolder;
 import soot.jimple.toolkits.scalar.DeadAssignmentEliminator;
@@ -243,33 +245,24 @@ public class Analyzer {
 		if (TrapManager.isExceptionCaughtAt(Scene.v().getSootClass("java.lang.SecurityException"), stmt, sm.getActiveBody())) {
 			return true;
 		} else {
-			Iterator<Edge> edges = Scene.v().getCallGraph().edgesOutOf(sm);
+			Collection<Unit> callers = new JimpleBasedInterproceduralCFG().getCallersOf(sm);
 			
-			if (!edges.hasNext()) {
+			if (callers.isEmpty()) {
 				return false;
 			} else {
-				while (edges.hasNext()) {
-					SootMethod caller = edges.next().getSrc().method();
-					if (caller.isConcrete()) {
-						for (Unit u : caller.retrieveActiveBody().getUnits()) {
-							if (u instanceof Stmt) {
-								Stmt stmtInCaller = (Stmt) u;
-								if (stmtInCaller.containsInvokeExpr()) {
-									InvokeExpr inv = stmtInCaller.getInvokeExpr();
-									AndroidMethod method = new AndroidMethod(inv.getMethod());
-									if (method.equals(sm)) {
-										if (!checkStatement(stmtInCaller, caller)) {
-											return false;
-										}
-									}
-								}
-							}
+				for (Unit u : callers) {
+					if (u instanceof Stmt) {
+						Stmt callerStmt = (Stmt) u;
+						if (!checkStatement(callerStmt, callerStmt.getInvokeExpr().getMethod())) {
+							System.out.println("Not found trap in caller");
+							return false;
 						}
-					} else {
+					} else  {
 						return false;
 					}
 				}
 				
+				System.out.println("Found trap in caller");
 				return true;
 			}
 		}
