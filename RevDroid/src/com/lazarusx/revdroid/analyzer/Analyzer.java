@@ -21,7 +21,6 @@ import soot.jimple.infoflow.cfg.LibraryClassPatcher;
 import soot.jimple.infoflow.solver.cfg.InfoflowCFG;
 import soot.jimple.infoflow.util.InterproceduralConstantValuePropagator;
 import soot.jimple.infoflow.util.SystemClassHandler;
-import soot.jimple.toolkits.callgraph.Edge;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 import soot.jimple.toolkits.scalar.ConditionalBranchFolder;
 import soot.jimple.toolkits.scalar.ConstantPropagatorAndFolder;
@@ -224,10 +223,8 @@ public class Analyzer {
 							InvokeExpr inv = stmt.getInvokeExpr();
 							AndroidMethod method = new AndroidMethod(inv.getMethod());
 							if (app.getMethodsConcerned().contains(method)) {
-								System.out.println("Occurrence found " + method.getSignature() + " " + sm.getName());
+								System.out.println("Occurrence found " + method.getSignature() + " " + sm.getSignature());
 								
-								// Super classes of `SecurityException` are included into analysis by Soot.
-								// See the source code of `TrapManager.isExceptionCaughtAt()`.
 								HashSet<Stmt> history = new HashSet<Stmt>();
 								if (checkStatement(stmt, sm, history)) {
 									System.out.println("Found traps containing the method");
@@ -250,6 +247,8 @@ public class Analyzer {
 			history.add(stmt);
 		}
 		
+		// Super classes of `SecurityException` are included into analysis by Soot.
+		// See the source code of `TrapManager.isExceptionCaughtAt()`.
 		if (TrapManager.isExceptionCaughtAt(Scene.v().getSootClass("java.lang.SecurityException"), stmt, sm.getActiveBody())) {
 			return true;
 		} else {
