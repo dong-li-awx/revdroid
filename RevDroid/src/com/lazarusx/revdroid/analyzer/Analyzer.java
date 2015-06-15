@@ -55,14 +55,14 @@ public class Analyzer {
 		
 		Main.setOutput();
 		
-		Options.v().set_no_bodies_for_excluded(true);
+//		Options.v().set_no_bodies_for_excluded(true);
 		Options.v().set_allow_phantom_refs(true);
 		Options.v().set_output_format(Options.output_format_none);
 		Options.v().set_whole_program(true);
 		Options.v().set_process_dir(Collections.singletonList(this.app.getApkPath()));
 //		Options.v().set_soot_classpath(
 //				appendClasspath(this.app.getApkPath(),
-//						this.app.getAndroidJarPath()));
+//						"/usr/lib/jvm/java-7-oracle/jre/lib/rt.jar"));
 		Options.v().set_soot_classpath(this.app.getAndroidJarPath());
 		Options.v().set_android_jars(this.app.getAndroidPlatformPath());
 		Options.v().set_src_prec(Options.src_prec_apk);
@@ -83,6 +83,7 @@ public class Analyzer {
 		SootMethod dummyMainMethod = this.app.getEntryPointCreator().createDummyMain();
 		Options.v().set_main_class(dummyMainMethod.getSignature());
 		Scene.v().setEntryPoints(Collections.singletonList(dummyMainMethod));
+		Scene.v().addBasicClass("java.lang.SecurityException");
 //		if (Scene.v().containsClass(this.app.getDummyMainMethod().getDeclaringClass().getName()))
 //			Scene.v().removeClass(this.app.getDummyMainMethod().getDeclaringClass());
 //		Scene.v().addClass(this.app.getDummyMainMethod().getDeclaringClass());
