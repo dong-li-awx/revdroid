@@ -238,6 +238,9 @@ public class Application {
 					hasChanged = true;
 				}
 			}
+
+			if (this.entryPoints.addAll(jimpleClass.getDynamicManifestComponents()))
+				hasChanged = true;
 		}
 
 		// Collect the XML-based callback methods
