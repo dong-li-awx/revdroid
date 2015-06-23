@@ -31,6 +31,7 @@ import soot.util.queue.QueueReader;
 
 public class Analyzer {
 	Application app;
+	HashSet<Stmt> misusages = new HashSet<Stmt>();
 
 	public Analyzer(Application app) {
 		this.app = app;
@@ -47,7 +48,7 @@ public class Analyzer {
 		
 		patchLibraries();
 		 
-		findExceptionHandler();
+		findExceptionHandler(this.misusages);
 	}
 
 	private void initSoot() {
@@ -212,11 +213,17 @@ public class Analyzer {
 		patcher.patchLibraries();
 	}
 	
-	private void findExceptionHandler() {
+	private void findExceptionHandler(HashSet<Stmt> misusages) {
 		Iterator<MethodOrMethodContext> iterator = Scene.v().getReachableMethods().listener();
 		while (iterator.hasNext()) {
 			SootMethod sm = iterator.next().method();
 			if (sm.isConcrete()) {
+				if (!sm.getName().equals("dummyMainMethod") && !sm.getDeclaringClass().getName().startsWith("android.") && !sm.getDeclaringClass().getName().startsWith("java.")) {
+					System.out.println(sm.getSignature());
+					if (sm.getSignature().equals("<com.noclicklabs.camera.CameraActivity: void onResume()>")) {
+						System.out.println();
+					}
+				}
 				for (Unit u : sm.retrieveActiveBody().getUnits()) {
 					if (u instanceof Stmt) {
 						Stmt stmt = (Stmt) u;
@@ -230,6 +237,7 @@ public class Analyzer {
 								if (checkStatement(stmt, sm, history)) {
 									System.out.println("Found traps containing the method");
 								} else {
+									misusages.add(stmt);
 									System.out.println("Not found traps containing the method");
 								}
 							}
