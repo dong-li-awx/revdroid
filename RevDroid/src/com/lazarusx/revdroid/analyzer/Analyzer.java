@@ -217,7 +217,8 @@ public class Analyzer {
 		Iterator<MethodOrMethodContext> iterator = Scene.v().getReachableMethods().listener();
 		while (iterator.hasNext()) {
 			SootMethod sm = iterator.next().method();
-			if (sm.isConcrete()) {
+			if (sm.isConcrete()
+					&& !SystemClassHandler.isClassInSystemPackage(sm.method().getDeclaringClass().getName())) {
 				if (!sm.getName().equals("dummyMainMethod") && !sm.getDeclaringClass().getName().startsWith("android.") && !sm.getDeclaringClass().getName().startsWith("java.")) {
 					System.out.println(sm.getSignature());
 					if (sm.getSignature().equals("<com.noclicklabs.camera.CameraActivity: void onResume()>")) {
