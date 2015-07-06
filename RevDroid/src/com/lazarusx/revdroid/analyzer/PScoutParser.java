@@ -44,9 +44,15 @@ public class PScoutParser {
 						String methodBody = tokens[2];
 						String methodName = methodBody.substring(0,
 								methodBody.indexOf('('));
-						String[] parameters = methodBody.substring(
+						String parameterString = methodBody.substring(
 								methodBody.indexOf('(') + 1,
-								methodBody.indexOf(')')).split(",");
+								methodBody.indexOf(')'));
+						String[] parameters;
+						if (parameterString.length() > 0) {
+							parameters = parameterString.split(",");
+						} else {
+							parameters = new String[0];
+						}
 
 						AndroidMethod method = new AndroidMethod(methodName,
 								Arrays.asList(parameters), returnType,
