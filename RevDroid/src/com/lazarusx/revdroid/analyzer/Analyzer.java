@@ -219,12 +219,6 @@ public class Analyzer {
 			SootMethod sm = iterator.next().method();
 			if (sm.isConcrete()
 					&& !SystemClassHandler.isClassInSystemPackage(sm.method().getDeclaringClass().getName())) {
-				if (!sm.getName().equals("dummyMainMethod") && !sm.getDeclaringClass().getName().startsWith("android.") && !sm.getDeclaringClass().getName().startsWith("java.")) {
-					System.out.println(sm.getSignature());
-					if (sm.getSignature().equals("<com.noclicklabs.camera.CameraActivity: void onResume()>")) {
-						System.out.println();
-					}
-				}
 				for (Unit u : sm.retrieveActiveBody().getUnits()) {
 					if (u instanceof Stmt) {
 						Stmt stmt = (Stmt) u;
@@ -232,14 +226,14 @@ public class Analyzer {
 							InvokeExpr inv = stmt.getInvokeExpr();
 							AndroidMethod method = new AndroidMethod(inv.getMethod());
 							if (app.getMethodsConcerned().contains(method)) {
-								System.out.println("Occurrence found " + method.getSignature() + " " + sm.getSignature());
-								
+								Helper.printDebugMessage("Occurrence found " + method.getSignature() + " " + sm.getSignature());
+																
 								HashSet<Stmt> history = new HashSet<Stmt>();
 								if (checkStatement(stmt, sm, history)) {
-									System.out.println("Found traps containing the method");
+									Helper.printDebugMessage("Found traps containing the method");
 								} else {
 									misusages.add(stmt);
-									System.out.println("Not found traps containing the method");
+									Helper.printDebugMessage("Not found traps containing the method");
 								}
 							}
 						}
@@ -249,9 +243,14 @@ public class Analyzer {
 		}
 	}
 	
+	/*
+	 * @param	stmt	the stmt which might lead to SecurityException
+	 * @param	sm		the method which stmt belongs to
+	 * @param	history	a collection of stmt's which have been checked before
+	 */
 	private boolean checkStatement(Stmt stmt, SootMethod sm, HashSet<Stmt> history) {
 		if (history.contains(stmt)) {
-			System.out.println("Recursion found. Not found trap in caller");
+			Helper.printDebugMessage("Recursion found. Not found trap in caller");
 			return false;
 		} else {
 			history.add(stmt);
