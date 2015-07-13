@@ -33,11 +33,15 @@ import soot.toolkits.graph.SimpleDominatorsFinder;
 import soot.util.queue.QueueReader;
 
 public class Analyzer {
-	Application app;
-	HashSet<Stmt> misusages = new HashSet<Stmt>();
+	private Application app;
+	private HashSet<Misusage> misusages = new HashSet<Misusage>();
 
 	public Analyzer(Application app) {
 		this.app = app;
+	}
+
+	public HashSet<Misusage> getMisusages() {
+		return this.misusages;
 	}
 
 	public void analyze() {
@@ -228,14 +232,16 @@ public class Analyzer {
 						if (stmt.containsInvokeExpr()) {
 							InvokeExpr inv = stmt.getInvokeExpr();
 							AndroidMethod method = new AndroidMethod(inv.getMethod());
-							if (app.getMethodsConcerned().contains(method)) {
+							int index;
+							if ((index = app.getMethodsConcerned().indexOf(method)) != -1) {
 								Helper.printDebugMessage("Occurrence found " + method.getSignature() + " " + sm.getSignature());
 																
 								HashSet<Stmt> history = new HashSet<Stmt>();
 								if (checkStatement(stmt, sm, history)) {
 									Helper.printDebugMessage("Found traps containing the method");
 								} else {
-									this.misusages.add(stmt);
+									AndroidMethod methodConcerned = app.getMethodsConcerned().get(index);
+									this.misusages.add(new Misusage(stmt, methodConcerned));
 									Helper.printDebugMessage("Not found traps containing the method");
 								}
 							}
