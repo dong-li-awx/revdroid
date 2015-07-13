@@ -1,6 +1,5 @@
 package com.lazarusx.revdroid.analyzer;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -8,6 +7,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
+import soot.Body;
 import soot.G;
 import soot.MethodOrMethodContext;
 import soot.PackManager;
@@ -27,6 +27,9 @@ import soot.jimple.toolkits.scalar.ConstantPropagatorAndFolder;
 import soot.jimple.toolkits.scalar.DeadAssignmentEliminator;
 import soot.jimple.toolkits.scalar.UnreachableCodeEliminator;
 import soot.options.Options;
+import soot.toolkits.graph.ExceptionalGraph;
+import soot.toolkits.graph.ExceptionalUnitGraph;
+import soot.toolkits.graph.SimpleDominatorsFinder;
 import soot.util.queue.QueueReader;
 
 public class Analyzer {
@@ -48,7 +51,7 @@ public class Analyzer {
 		
 		patchLibraries();
 		 
-		findExceptionHandler(this.misusages);
+		findMisusages();
 	}
 
 	private void initSoot() {
@@ -111,17 +114,17 @@ public class Analyzer {
 //				Collections.singletonList(this.app.getDummyMainMethod()));
 //		
 	}
-
-	private String appendClasspath(String appPath, String libPath) {
-		String s = (appPath != null && !appPath.isEmpty()) ? appPath : "";
-
-		if (libPath != null && !libPath.isEmpty()) {
-			if (!s.isEmpty())
-				s += File.pathSeparator;
-			s += libPath;
-		}
-		return s;
-	}
+//
+//	private String appendClasspath(String appPath, String libPath) {
+//		String s = (appPath != null && !appPath.isEmpty()) ? appPath : "";
+//
+//		if (libPath != null && !libPath.isEmpty()) {
+//			if (!s.isEmpty())
+//				s += File.pathSeparator;
+//			s += libPath;
+//		}
+//		return s;
+//	}
 	
 	/**
 	 * Performs an interprocedural dead-code elimination on all application
@@ -213,7 +216,7 @@ public class Analyzer {
 		patcher.patchLibraries();
 	}
 	
-	private void findExceptionHandler(HashSet<Stmt> misusages) {
+	private void findMisusages() {
 		Iterator<MethodOrMethodContext> iterator = Scene.v().getReachableMethods().listener();
 		while (iterator.hasNext()) {
 			SootMethod sm = iterator.next().method();
@@ -232,7 +235,7 @@ public class Analyzer {
 								if (checkStatement(stmt, sm, history)) {
 									Helper.printDebugMessage("Found traps containing the method");
 								} else {
-									misusages.add(stmt);
+									this.misusages.add(stmt);
 									Helper.printDebugMessage("Not found traps containing the method");
 								}
 							}
@@ -244,9 +247,11 @@ public class Analyzer {
 	}
 	
 	/*
-	 * @param	stmt	the stmt which might lead to SecurityException
-	 * @param	sm		the method which stmt belongs to
-	 * @param	history	a collection of stmt's which have been checked before
+	 * Check whether a Stmt which belongs to a SootMethod handles permission check correctly.
+	 * When requirement is not met and recursion is found, this method returns false.
+	 * @param	stmt	the Stmt which might lead to SecurityException
+	 * @param	sm		the SootMethod which stmt belongs to
+	 * @param	history	a collection of Stmt's which have been checked before
 	 */
 	private boolean checkStatement(Stmt stmt, SootMethod sm, HashSet<Stmt> history) {
 		if (history.contains(stmt)) {
@@ -260,6 +265,8 @@ public class Analyzer {
 		// See the source code of `TrapManager.isExceptionCaughtAt()`.
 		if (TrapManager.isExceptionCaughtAt(Scene.v().getSootClass("java.lang.SecurityException"), stmt, sm.getActiveBody())) {
 			return true;
+		} else if (findProactivePermissionCheck(stmt, sm.getActiveBody())) {
+			return true;
 		} else {
 			Collection<Unit> callers = new JimpleBasedInterproceduralCFG().getCallersOf(sm);
 			
@@ -269,18 +276,53 @@ public class Analyzer {
 				for (Unit u : callers) {
 					if (u instanceof Stmt) {
 						Stmt callerStmt = (Stmt) u;
-						if (!checkStatement(callerStmt, callerStmt.getInvokeExpr().getMethod(), history)) {
-							System.out.println("Not found trap in caller");
-							return false;
+						if (callerStmt.containsInvokeExpr()) {
+							if (!checkStatement(callerStmt, callerStmt.getInvokeExpr().getMethod(), history)) {
+								Helper.printDebugMessage("Not found trap in caller");
+								return false;
+							}
 						}
 					} else  {
 						return false;
 					}
 				}
 				
-				System.out.println("Found trap in caller");
+				Helper.printDebugMessage("Found trap in caller");
 				return true;
 			}
 		}
+	}
+	
+	/*
+	 * Find whether a Stmt which belongs to a Body is wrapper by a proactive permission check
+	 * @param	stmt	the Stmt which might lead to SecurityException
+	 * @param	sm		the body which Stmt belongs to		
+	 */
+	private boolean findProactivePermissionCheck(Stmt stmt, Body body) {
+		// Match method name String instead of the entire AndroidMethod because 
+		// subclasses of Context also have the following methods
+		// TODO: do it more precisely 
+		HashSet<String> permissionCheckers = new HashSet<String>();
+		permissionCheckers.add("checkPermission");
+		permissionCheckers.add("checkCallingPermission");
+		permissionCheckers.add("checkCallingOrSelfPermission");
+		permissionCheckers.add("checkUidPermission");
+		
+		ExceptionalGraph<Unit> graph = new ExceptionalUnitGraph(body);
+		SimpleDominatorsFinder<Unit> dominatorFinder = new SimpleDominatorsFinder<Unit>(graph);
+		List<Unit> dominators = dominatorFinder.getDominators(stmt);
+		for (Unit unit : dominators) {
+			if (unit instanceof Stmt) {
+				Stmt dominatorStmt = (Stmt) unit;
+				if (dominatorStmt.containsInvokeExpr()) {
+					if (permissionCheckers.contains(dominatorStmt.getInvokeExpr().getMethod().getName())) {
+						Helper.printDebugMessage("Proactive permission check found: " + dominatorStmt.getInvokeExpr().getMethod().getSignature());
+						return true;
+					}
+				}
+			}
+		}
+		
+		return false;
 	}
 }
