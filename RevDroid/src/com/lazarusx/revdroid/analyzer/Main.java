@@ -1,13 +1,8 @@
 package com.lazarusx.revdroid.analyzer;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.PrintStream;
 
 import org.xmlpull.v1.XmlPullParserException;
-
-import soot.G;
 
 public class Main {
 	final static String ANDROID_PLATFORM_PATH = "/home/ray/android-sdk/platforms";
@@ -32,17 +27,6 @@ public class Main {
 		if (app != null) {
 			Analyzer analyzer = new Analyzer(app);
 			analyzer.analyze();
-		}
-	}
-	
-	
-	public static void setOutput() {
-		if (!DEBUG) {
-			try {
-				G.v().out = new PrintStream(new File("/dev/null"));
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			} 
 		}
 	}
 }

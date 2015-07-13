@@ -54,7 +54,7 @@ public class Analyzer {
 	private void initSoot() {
 		G.reset();
 		
-		Main.setOutput();
+		Helper.setOutput();
 		
 //		Options.v().set_no_bodies_for_excluded(true);
 		Options.v().set_allow_phantom_refs(true);
