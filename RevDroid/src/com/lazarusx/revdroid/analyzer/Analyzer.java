@@ -274,7 +274,8 @@ public class Analyzer {
 		} else if (findProactivePermissionCheck(stmt, sm.getActiveBody())) {
 			return true;
 		} else {
-			Collection<Unit> callers = new JimpleBasedInterproceduralCFG().getCallersOf(sm);
+			JimpleBasedInterproceduralCFG cfg = new JimpleBasedInterproceduralCFG();
+			Collection<Unit> callers = cfg.getCallersOf(sm);
 			
 			if (callers.isEmpty()) {
 				return false;
@@ -283,12 +284,17 @@ public class Analyzer {
 					if (u instanceof Stmt) {
 						Stmt callerStmt = (Stmt) u;
 						if (callerStmt.containsInvokeExpr()) {
-							if (!checkStatement(callerStmt, callerStmt.getInvokeExpr().getMethod(), history)) {
+							SootMethod callerMethod = cfg.getMethodOf(u);
+							if (!checkStatement(callerStmt, callerMethod, history)) {
 								Helper.printDebugMessage("Not found trap in caller");
 								return false;
 							}
+						} else {
+							Helper.printDebugMessage("Caller statement does not contain invoke expressions");
+							return false;
 						}
 					} else  {
+						Helper.printDebugMessage("Caller unit is not an instance of Stmt");
 						return false;
 					}
 				}
