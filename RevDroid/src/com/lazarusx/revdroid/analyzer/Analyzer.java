@@ -24,7 +24,6 @@ import soot.jimple.infoflow.util.SystemClassHandler;
 import soot.jimple.toolkits.ide.icfg.JimpleBasedInterproceduralCFG;
 import soot.jimple.toolkits.scalar.ConditionalBranchFolder;
 import soot.jimple.toolkits.scalar.ConstantPropagatorAndFolder;
-import soot.jimple.toolkits.scalar.DeadAssignmentEliminator;
 import soot.jimple.toolkits.scalar.UnreachableCodeEliminator;
 import soot.options.Options;
 import soot.toolkits.graph.ExceptionalGraph;
@@ -152,7 +151,7 @@ public class Analyzer {
 			List<Unit> callSites = getCallsInMethod(sm.method());
 			
 			ConstantPropagatorAndFolder.v().transform(sm.method().getActiveBody());
-			DeadAssignmentEliminator.v().transform(sm.method().getActiveBody());
+			RevDroidDeadAssignmentEliminator.v().transform(sm.method().getActiveBody());
 			
 			// Remove the dead callgraph edges
 			List<Unit> newCallSites = getCallsInMethod(sm.method());
